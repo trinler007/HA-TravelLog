@@ -18,9 +18,7 @@ Wartungen im Dashboard anzeigen und Bordbucheinträge direkt aus Home Assistant 
 
 Voraussetzungen: Home Assistant **2025.1 oder neuer**, HACS und eine TravelLog-Version mit den Endpunkten aus [docs/API.md](https://github.com/trinler007/TravelLog/blob/main/docs/API.md).
 
-**Repository-Sichtbarkeit:** HACS unterstützt nur öffentliche GitHub-Repositories. Solange `trinler007/HA-TravelLog` privat ist, ist nur die manuelle Installation möglich. Ein privates Repository wird nicht durch einen zusätzlichen API-Schlüssel HACS-kompatibel.
-
-Sobald dieses Repository öffentlich ist:
+Bereitstellung:
 
 1. In HACS das Menü **Benutzerdefinierte Repositories** öffnen.
 2. `https://github.com/trinler007/HA-TravelLog` hinzufügen, Kategorie **Integration**.
