@@ -56,6 +56,42 @@ Speicherstatus: `idle`, `saving`, `saved`, `needs_review`, `error`, `uncertain`.
 
 ## Bordbuch-Aktion
 
+### Tagesziel und Tankformular (ab 0.2.0)
+
+Der Button **Day end** überträgt die KM-Eingabe und den aktuellen Zustand von
+`sensor.nx_01_position_gps_location` als `vendor` (Tagesziel). Unter
+**Einstellungen → Geräte & Dienste → TravelLog → Konfigurieren** kann ein anderer
+Ortssensor gewählt werden. Ist der gewählte Sensor nicht verfügbar oder sein Wert
+`unknown`/`unavailable`, wird nicht gespeichert. Wird die Auswahl in den Optionen
+geleert, übernimmt wieder TravelLogs serverseitige Zielermittlung. Es werden keine
+GPS-Koordinaten übertragen; die API erhält den bereits aufgelösten Ortsnamen.
+
+Für **Fuel** zuerst den KM-Stand und optional folgende Entitäten ausfüllen:
+
+| Entität | Eingabe |
+| --- | --- |
+| `number.travellog_fuel_liters` | Füllmenge in Litern |
+| `number.travellog_fuel_price_per_liter` | Preis pro Liter in EUR |
+| `number.travellog_fuel_total_price` | Gesamtpreis in EUR |
+| `switch.travellog_fuel_full_tank` | Vollgetankt: an = ja, aus = nein |
+
+Anschließend **Fuel** drücken. Die aktualisierte [Dashboard-Karte](examples/dashboard.yaml)
+ordnet die Felder als Formular an; der Button selbst öffnet keinen Dialog. Der
+Vollgetankt-Wert ist in HA ein Schalter, im Aktionseditor eine boolesche Auswahl.
+Nicht ausgefüllte Zahlenfelder erscheinen zunächst als unbekannt und werden nicht
+gesendet. Eine explizit eingegebene `0` wird dagegen übertragen. Bei fehlendem
+Gesamtpreis berechnet TravelLog diesen aus Litern und Literpreis; bei fehlendem
+Literpreis aus Litern und Gesamtpreis. Werden alle drei Werte eingegeben, werden
+sie unverändert übertragen. Die Button-Eingaben verwenden EUR; andere Währungen
+sind weiterhin über die Bordbuch-Aktion möglich.
+
+Nach bestätigtem Tanken werden die Tankfelder und der Vollgetankt-Schalter
+zurückgesetzt, auch bei `needs_review`. Bei Fehlern bleiben sie erhalten.
+**Reset fuel inputs** leert sie manuell, ohne etwas zu speichern. Die KM-Eingabe
+bleibt bestehen. Der Tagesabschluss übernimmt keine Tankdaten. Direkte Aufrufe
+von `travellog.add_logbook_entry` verwenden weiterhin ausschließlich die explizit
+übergebenen Werte und verändern das Formular nicht.
+
 Minimaler Tagesabschluss:
 
 ```yaml

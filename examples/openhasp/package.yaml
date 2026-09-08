@@ -46,12 +46,9 @@ script:
           entity_id: number.travellog_odometer_input
         data:
           value: "{{ states('input_text.travellog_km_buffer') | int }}"
-      - action: travellog.add_logbook_entry
-        data:
-          log_type: "{{ log_type }}"
-          odometer_km: "{{ states('input_text.travellog_km_buffer') | int }}"
-          # For multiple instances add config_entry_id here.
-        response_variable: saved_entry
+      - action: button.press
+        target:
+          entity_id: "{{ 'button.travellog_day_end' if log_type == 'day_end' else 'button.travellog_fuel' }}"
       # This step is reached only after a confirmed POST (also needs_review).
       - action: input_text.set_value
         target:

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0
+
+- Day end sends the current odometer input and resolved destination from a
+  configurable HA sensor (default: `sensor.nx_01_position_gps_location`).
+- Fuel supports optional liters, price per liter, total price and a full-tank
+  toggle. Unset values are omitted; explicit zero values are preserved.
+- Fuel drafts clear after confirmed saves and remain intact on failures.
+- Added a reset-draft button and dashboard form; updated openHASP button bindings.
+
 ## 0.1.1
 
 - Use the documented `X-API-Key` authentication header. This fixes HTTP 401

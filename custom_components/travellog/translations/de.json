@@ -85,5 +85,16 @@
         }
       }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tagesziel",
+        "description": "Ortssensor für Tagesabschlüsse. Auswahl leeren, um die Zielermittlung der WebApp zu verwenden.",
+        "data": {
+          "location_entity": "Ortssensor"
+        }
+      }
+    }
   }
 }

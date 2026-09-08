@@ -3,17 +3,29 @@
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_API_KEY, CONF_URL
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType
+from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
 
 from .api import TravelLogAuthError, TravelLogClient, TravelLogError, normalize_url
-from .const import DOMAIN
+from .const import CONF_LOCATION_ENTITY, DEFAULT_LOCATION_ENTITY, DOMAIN
 
 
 class TravelLogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """One config entry per application URL."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        return TravelLogOptionsFlow()
 
     async def async_step_user(self, user_input=None):
         errors = {}
@@ -78,4 +90,29 @@ class TravelLogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+        )
+
+
+class TravelLogOptionsFlow(config_entries.OptionsFlow):
+    """Select the resolved location used by the day-end button."""
+
+    async def async_step_init(self, user_input=None):
+        if user_input is not None:
+            return self.async_create_entry(
+                title="", data={CONF_LOCATION_ENTITY: user_input.get(CONF_LOCATION_ENTITY, "")}
+            )
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_LOCATION_ENTITY,
+                        description={
+                            "suggested_value": self.config_entry.options.get(
+                                CONF_LOCATION_ENTITY, DEFAULT_LOCATION_ENTITY
+                            )
+                        },
+                    ): EntitySelector(EntitySelectorConfig(domain="sensor")),
+                }
+            ),
         )

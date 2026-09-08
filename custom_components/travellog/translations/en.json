@@ -85,5 +85,16 @@
         }
       }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Day-end destination",
+        "description": "Resolved location sensor for day-end entries. Clear selection to use the web app destination lookup.",
+        "data": {
+          "location_entity": "Location sensor"
+        }
+      }
+    }
   }
 }

@@ -73,7 +73,7 @@ def coordinator(hass):
         fetch=AsyncMock(return_value=deepcopy(SNAPSHOT)),
         request=AsyncMock(return_value={"id": 8, "needs_review": False}),
     )
-    entry = SimpleNamespace(entry_id="test", async_start_reauth=MagicMock())
+    entry = SimpleNamespace(entry_id="test", options={}, async_start_reauth=MagicMock())
     coordinator = TravelLogCoordinator(hass, entry, client)
     coordinator.async_set_updated_data(deepcopy(SNAPSHOT))
     coordinator.async_request_refresh = AsyncMock()
@@ -178,6 +178,7 @@ async def test_real_config_flow_setup_service_and_unload(hass):
         )
         assert result["type"] is FlowResultType.CREATE_ENTRY
         await hass.async_block_till_done()
+
         entry = result["result"]
         registry = er.async_get(hass)
 
@@ -257,3 +258,133 @@ async def test_reauthentication_updates_key(hass):
         assert reauth["reason"] == "reauth_successful"
         assert entry.data["api_key"] == "new"
         await hass.async_block_till_done()
+
+
+async def test_day_end_uses_location_and_ignores_fuel(coordinator, hass):
+    hass.states.async_set("sensor.nx_01_position_gps_location", "Kempten, Deutschland")
+    coordinator.set_odometer(123456.7)
+    coordinator.set_fuel_input("liters", 120)
+    await coordinator.async_quick_entry("day_end")
+    coordinator.client.request.assert_awaited_once_with(
+        "POST",
+        "logbook",
+        {"log_type": "day_end", "odometer_km": 123456.7, "vendor": "Kempten, Deutschland"},
+    )
+    assert coordinator.fuel_inputs["liters"] == 120
+
+
+@pytest.mark.parametrize("location", [None, "unknown", "unavailable", "   ", "x" * 181])
+async def test_invalid_location_does_not_write(coordinator, hass, location):
+    coordinator.set_odometer(100)
+    if location is not None:
+        hass.states.async_set("sensor.nx_01_position_gps_location", location)
+    with pytest.raises(HomeAssistantError):
+        await coordinator.async_quick_entry("day_end")
+    coordinator.client.request.assert_not_called()
+
+
+async def test_cleared_location_option_uses_server_lookup(coordinator):
+    coordinator.entry.options = {"location_entity": ""}
+    coordinator.set_odometer(100)
+    await coordinator.async_quick_entry("day_end")
+    assert coordinator.client.request.call_args.args[2] == {
+        "log_type": "day_end",
+        "odometer_km": 100,
+    }
+
+
+async def test_fuel_omits_unset_values_and_clears_confirmed_draft(coordinator):
+    coordinator.set_odometer(100)
+    coordinator.set_fuel_input("liters", 123.45)
+    coordinator.set_fuel_input("amount", 0)
+    coordinator.set_full_tank(True)
+    coordinator.client.request.return_value = {"id": 8, "needs_review": True}
+    await coordinator.async_quick_entry("fuel")
+    assert coordinator.client.request.call_args.args[2] == {
+        "log_type": "fuel",
+        "odometer_km": 100,
+        "liters": 123.45,
+        "amount": 0,
+        "is_full_tank": True,
+    }
+    assert all(v is None for v in coordinator.fuel_inputs.values())
+    assert coordinator.full_tank is False
+    assert coordinator.odometer_input == 100
+    with pytest.raises(HomeAssistantError, match="Repeated"):
+        await coordinator.async_quick_entry("fuel")
+    coordinator.client.request.assert_awaited_once()
+
+
+async def test_fuel_failure_preserves_draft(coordinator):
+    coordinator.set_odometer(100)
+    coordinator.set_fuel_input("liters", 20)
+    coordinator.set_fuel_input("price_per_liter", 1.789)
+    coordinator.set_full_tank(True)
+    coordinator.client.request.side_effect = TravelLogWriteUncertain("Check logbook")
+    with pytest.raises(HomeAssistantError):
+        await coordinator.async_quick_entry("fuel")
+    assert coordinator.fuel_inputs["liters"] == 20
+    assert coordinator.fuel_inputs["price_per_liter"] == 1.789
+    assert coordinator.full_tank is True
+    coordinator.reset_fuel()
+    assert all(v is None for v in coordinator.fuel_inputs.values())
+    assert coordinator.full_tank is False
+
+
+async def test_buttons_and_options_through_home_assistant(hass):
+    with (
+        patch(
+            "custom_components.travellog.api.TravelLogClient.fetch",
+            AsyncMock(return_value=deepcopy(SNAPSHOT)),
+        ),
+        patch(
+            "custom_components.travellog.api.TravelLogClient.request",
+            AsyncMock(return_value={"id": 9, "needs_review": False}),
+        ) as request,
+    ):
+        result = await hass.config_entries.flow.async_init(
+            "travellog",
+            context={"source": "user"},
+            data={"url": "https://travel.example", "api_key": "test"},
+        )
+        await hass.async_block_till_done()
+        entry = result["result"]
+        registry = er.async_get(hass)
+
+        async def call(domain, service, key, **data):
+            entity_id = registry.async_get_entity_id(domain, "travellog", f"{entry.entry_id}_{key}")
+            assert entity_id is not None
+            await hass.services.async_call(
+                domain, service, {"entity_id": entity_id, **data}, blocking=True
+            )
+
+        options = await hass.config_entries.options.async_init(entry.entry_id)
+        assert options["type"] is FlowResultType.FORM
+        await hass.config_entries.options.async_configure(
+            options["flow_id"], {"location_entity": "sensor.destination"}
+        )
+        hass.states.async_set("sensor.destination", "Bozen")
+        await call("number", "set_value", "odometer_input", value=123456)
+        await call("button", "press", "day_end")
+        assert request.call_args.args[2]["vendor"] == "Bozen"
+        await call("number", "set_value", "fuel_liters", value=100)
+        await call("number", "set_value", "fuel_price_per_liter", value=1.789)
+        await call("number", "set_value", "fuel_amount", value=178.9)
+        await call("switch", "turn_on", "fuel_full_tank")
+        await call("button", "press", "fuel")
+        assert request.call_args.args[2] == {
+            "log_type": "fuel",
+            "odometer_km": 123456,
+            "liters": 100,
+            "price_per_liter": 1.789,
+            "amount": 178.9,
+            "is_full_tank": True,
+        }
+        assert entry.runtime_data.full_tank is False
+        assert all(v is None for v in entry.runtime_data.fuel_inputs.values())
+        await call("number", "set_value", "fuel_liters", value=50)
+        await call("switch", "turn_on", "fuel_full_tank")
+        await call("button", "press", "reset_fuel_inputs")
+        assert entry.runtime_data.fuel_inputs["liters"] is None
+        assert entry.runtime_data.full_tank is False
+        assert request.await_count == 2

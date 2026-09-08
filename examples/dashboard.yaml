@@ -7,10 +7,35 @@ cards:
       - sensor.travellog_maintenance_overdue
       - sensor.travellog_maintenance_soon
       - sensor.travellog_maintenance_never_recorded
-      - number.travellog_odometer_input
-      - button.travellog_day_end
-      - button.travellog_fuel
       - sensor.travellog_write_status
+  - type: entities
+    title: Tagesabschluss
+    show_header_toggle: false
+    entities:
+      - entity: number.travellog_odometer_input
+        name: Aktueller Kilometerstand
+      - entity: sensor.nx_01_position_gps_location
+        name: Tagesziel
+      - entity: button.travellog_day_end
+        name: Tagesabschluss speichern
+  - type: entities
+    title: Tanken
+    show_header_toggle: false
+    entities:
+      - entity: number.travellog_odometer_input
+        name: Aktueller Kilometerstand
+      - entity: number.travellog_fuel_liters
+        name: Füllmenge (optional)
+      - entity: number.travellog_fuel_price_per_liter
+        name: Literpreis (optional)
+      - entity: number.travellog_fuel_total_price
+        name: Gesamtpreis (optional)
+      - entity: switch.travellog_fuel_full_tank
+        name: Vollgetankt
+      - entity: button.travellog_fuel
+        name: Tankvorgang speichern
+      - entity: button.travellog_reset_fuel_inputs
+        name: Tankangaben leeren
   - type: markdown
     title: Wartungsaufgaben
     content: |-
