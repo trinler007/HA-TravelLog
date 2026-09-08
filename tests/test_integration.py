@@ -12,6 +12,8 @@ import pytest
 pytest.importorskip("homeassistant")
 
 import voluptuous as vol
+from homeassistant import config_entries, loader
+from homeassistant.bootstrap import async_load_base_functionality
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError
@@ -47,6 +49,9 @@ SNAPSHOT = {
 async def hass(tmp_path):
     hass = HomeAssistant(str(tmp_path))
     shutil.copytree(Path(__file__).parents[1] / "custom_components", tmp_path / "custom_components")
+    loader.async_setup(hass)
+    hass.config_entries = config_entries.ConfigEntries(hass, {})
+    await async_load_base_functionality(hass)
     yield hass
     await hass.async_stop(force=True)
 
