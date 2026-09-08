@@ -101,7 +101,8 @@ async def test_post_preserves_payload_and_credentials_header(server):
     responses.append(web.json_response({"id": 3, "needs_review": True}, status=201))
     result = await client.request("POST", "logbook", payload)
     assert requests[0]["body"] == payload
-    assert requests[0]["headers"]["Authorization"] == "Bearer secret"
+    assert requests[0]["headers"]["X-API-Key"] == "secret"
+    assert "Authorization" not in requests[0]["headers"]
     assert result == {"id": 3, "needs_review": True}
 
 

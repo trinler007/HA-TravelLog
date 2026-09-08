@@ -51,7 +51,7 @@ class TravelLogClient:
             async with self.session.request(
                 method,
                 f"{self.url}/api/v1/{path}",
-                headers={"Authorization": f"Bearer {self._api_key}"},
+                headers={"X-API-Key": self._api_key},
                 json=payload,
                 timeout=aiohttp.ClientTimeout(total=30),
                 allow_redirects=False,

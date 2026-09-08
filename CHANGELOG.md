@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+- Use the documented `X-API-Key` authentication header. This fixes HTTP 401
+  on deployments where Apache or a proxy does not forward `Authorization`
+  to PHP, even though the API key and source IP are valid.
+- Verified maintenance and logbook reads against a live TravelLog instance.
+
 ## 0.1.0
 
 - Initial TravelLog integration with UI setup and API-key renewal.
