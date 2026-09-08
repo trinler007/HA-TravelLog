@@ -1,0 +1,89 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "TravelLog",
+        "description": "Enter the TravelLog application URL and API key.",
+        "data": {
+          "url": "Application URL",
+          "api_key": "API key"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Renew API key",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "Invalid application URL.",
+      "invalid_auth": "API key or source IP not authorized.",
+      "cannot_connect": "Cannot connect or invalid API response."
+    },
+    "abort": {
+      "already_configured": "This TravelLog instance is already configured.",
+      "reauth_successful": "API key updated."
+    }
+  },
+  "services": {
+    "add_logbook_entry": {
+      "name": "Add logbook entry",
+      "description": "Save a TravelLog entry. Incomplete fuel details can be completed in the web app.",
+      "fields": {
+        "config_entry_id": {
+          "name": "TravelLog instance",
+          "description": "Required when multiple instances are configured."
+        },
+        "log_type": {
+          "name": "Entry type",
+          "description": "Entry type"
+        },
+        "odometer_km": {
+          "name": "Odometer (km)",
+          "description": "Odometer (km)"
+        },
+        "occurred_on": {
+          "name": "Date",
+          "description": "Date"
+        },
+        "vendor": {
+          "name": "Destination / business",
+          "description": "Destination / business"
+        },
+        "country_code": {
+          "name": "Country code",
+          "description": "Country code"
+        },
+        "liters": {
+          "name": "Liters",
+          "description": "Liters"
+        },
+        "price_per_liter": {
+          "name": "Price per liter",
+          "description": "Price per liter"
+        },
+        "is_full_tank": {
+          "name": "Full tank",
+          "description": "Full tank"
+        },
+        "amount": {
+          "name": "Amount",
+          "description": "Amount"
+        },
+        "currency": {
+          "name": "Currency",
+          "description": "Currency"
+        },
+        "performed_by": {
+          "name": "Performed by",
+          "description": "Performed by"
+        },
+        "notes": {
+          "name": "Notes",
+          "description": "Notes"
+        }
+      }
+    }
+  }
+}

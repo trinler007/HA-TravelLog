@@ -1,0 +1,22 @@
+type: vertical-stack
+cards:
+  - type: entities
+    title: TravelLog
+    entities:
+      - sensor.travellog_odometer
+      - sensor.travellog_maintenance_overdue
+      - sensor.travellog_maintenance_soon
+      - sensor.travellog_maintenance_never_recorded
+      - number.travellog_odometer_input
+      - button.travellog_day_end
+      - button.travellog_fuel
+      - sensor.travellog_write_status
+  - type: markdown
+    title: Wartungsaufgaben
+    content: |-
+      {% for task in state_attr('sensor.travellog_maintenance', 'tasks') or [] %}
+      **{{ task.name }}** — {{ task.state.label }}
+      Zuletzt: {{ task.last_performed_on or 'nie' }} · {{ task.last_odometer_km or '–' }} km
+      Intervall: {{ task.interval_km or '–' }} km / {{ task.interval_months or '–' }} Monate
+
+      {% endfor %}

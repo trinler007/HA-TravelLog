@@ -1,0 +1,6 @@
+{"page":1,"id":1,"obj":"label","x":10,"y":5,"w":300,"h":30,"text":"TravelLog | Bordbuch","text_font":24}
+{"page":1,"id":2,"obj":"label","x":10,"y":40,"w":300,"h":40,"text":"KM eingeben","text_font":28}
+{"page":1,"id":3,"obj":"btnmatrix","x":10,"y":85,"w":300,"h":220,"options":["1","2","3","\n","4","5","6","\n","7","8","9","\n","C","0","<"],"text_font":28,"toggle":false}
+{"page":1,"id":4,"obj":"btn","x":10,"y":315,"w":300,"h":48,"text":"Tagesabschluss","text_font":24,"toggle":false}
+{"page":1,"id":5,"obj":"btn","x":10,"y":373,"w":300,"h":48,"text":"Tanken","text_font":24,"toggle":false}
+{"page":1,"id":6,"obj":"label","x":10,"y":428,"w":300,"h":47,"text":"Bereit","text_font":16}

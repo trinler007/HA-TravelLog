@@ -1,0 +1,95 @@
+# Copy into /config/packages/travellog_display.yaml.
+# Enable packages in configuration.yaml; replace fahrerhaus and the entity IDs.
+input_text:
+  travellog_km_buffer:
+    name: TravelLog KM Eingabe
+    initial: ""
+    max: 7
+
+script:
+  travellog_keypad:
+    alias: TravelLog Zifferntaste
+    mode: queued
+    max: 20
+    fields:
+      key:
+        description: Ziffer, C oder <
+    sequence:
+      - variables:
+          current: "{{ states('input_text.travellog_km_buffer') }}"
+          pressed: "{{ key | string }}"
+      - condition: template
+        value_template: "{{ pressed in ['0','1','2','3','4','5','6','7','8','9','C','<'] }}"
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.travellog_km_buffer
+        data:
+          value: >-
+            {% if pressed == 'C' %}{{ '' }}
+            {% elif pressed == '<' %}{{ current[:-1] }}
+            {% elif current | length < 7 %}{{ current ~ pressed }}
+            {% else %}{{ current }}{% endif %}
+
+  travellog_display_save:
+    alias: TravelLog Display speichern
+    mode: single
+    fields:
+      log_type:
+        description: day_end oder fuel
+    sequence:
+      - condition: template
+        value_template: >-
+          {{ log_type in ['day_end','fuel'] and
+             states('input_text.travellog_km_buffer') | regex_match('^[0-9]{1,7}$') }}
+      - action: number.set_value
+        target:
+          entity_id: number.travellog_odometer_input
+        data:
+          value: "{{ states('input_text.travellog_km_buffer') | int }}"
+      - action: travellog.add_logbook_entry
+        data:
+          log_type: "{{ log_type }}"
+          odometer_km: "{{ states('input_text.travellog_km_buffer') | int }}"
+          # For multiple instances add config_entry_id here.
+        response_variable: saved_entry
+      # This step is reached only after a confirmed POST (also needs_review).
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.travellog_km_buffer
+        data:
+          value: ""
+
+openhasp:
+  fahrerhaus:
+    objects:
+      - obj: p1b2
+        properties:
+          text: >-
+            {% set km = states('input_text.travellog_km_buffer') %}
+            {{ (km ~ ' km') if km else 'KM eingeben' }}
+      - obj: p1b3
+        event:
+          up:
+            - service: script.travellog_keypad
+              data:
+                key: "{{ text }}"
+      - obj: p1b4
+        event:
+          up:
+            - service: script.travellog_display_save
+              data:
+                log_type: day_end
+      - obj: p1b5
+        event:
+          up:
+            - service: script.travellog_display_save
+              data:
+                log_type: fuel
+      - obj: p1b6
+        properties:
+          text: >-
+            {% set s = states('sensor.travellog_write_status') %}
+            {{ {'idle':'Bereit', 'saving':'Speichert...',
+                'saved':'Gespeichert', 'needs_review':'Gespeichert - in WebApp ergaenzen',
+                'uncertain':'Unklar - zuerst WebApp pruefen',
+                'error':'Fehler - Verbindung/API pruefen'}.get(s, 'TravelLog nicht bereit') }}

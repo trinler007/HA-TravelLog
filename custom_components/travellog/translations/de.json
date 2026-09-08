@@ -1,0 +1,89 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "TravelLog",
+        "description": "URL der TravelLog-WebApp und API-Schlüssel eingeben.",
+        "data": {
+          "url": "WebApp-URL",
+          "api_key": "API-Schlüssel"
+        }
+      },
+      "reauth_confirm": {
+        "title": "API-Schlüssel erneuern",
+        "data": {
+          "api_key": "API-Schlüssel"
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "Ungültige WebApp-URL.",
+      "invalid_auth": "API-Schlüssel oder Quell-IP nicht freigegeben.",
+      "cannot_connect": "Verbindung oder API-Antwort fehlerhaft."
+    },
+    "abort": {
+      "already_configured": "Diese TravelLog-Instanz ist bereits eingerichtet.",
+      "reauth_successful": "API-Schlüssel aktualisiert."
+    }
+  },
+  "services": {
+    "add_logbook_entry": {
+      "name": "Bordbucheintrag hinzufügen",
+      "description": "Speichert einen Eintrag in TravelLog. Unvollständige Tankdaten können dort nachbearbeitet werden.",
+      "fields": {
+        "config_entry_id": {
+          "name": "TravelLog-Instanz",
+          "description": "Bei mehreren Instanzen erforderlich."
+        },
+        "log_type": {
+          "name": "Eintragstyp",
+          "description": "Eintragstyp"
+        },
+        "odometer_km": {
+          "name": "Kilometerstand (km)",
+          "description": "Kilometerstand (km)"
+        },
+        "occurred_on": {
+          "name": "Datum",
+          "description": "Datum"
+        },
+        "vendor": {
+          "name": "Ziel / Betrieb",
+          "description": "Ziel / Betrieb"
+        },
+        "country_code": {
+          "name": "Ländercode",
+          "description": "Ländercode"
+        },
+        "liters": {
+          "name": "Liter",
+          "description": "Liter"
+        },
+        "price_per_liter": {
+          "name": "Literpreis",
+          "description": "Literpreis"
+        },
+        "is_full_tank": {
+          "name": "Vollgetankt",
+          "description": "Vollgetankt"
+        },
+        "amount": {
+          "name": "Betrag",
+          "description": "Betrag"
+        },
+        "currency": {
+          "name": "Währung",
+          "description": "Währung"
+        },
+        "performed_by": {
+          "name": "Ausgeführt von",
+          "description": "Ausgeführt von"
+        },
+        "notes": {
+          "name": "Bemerkungen",
+          "description": "Bemerkungen"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,72 @@
+add_logbook_entry:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: travellog
+    log_type:
+      required: true
+      selector:
+        select:
+          options:
+            - day_end
+            - fuel
+            - maintenance
+            - repair
+            - cost
+            - odometer
+    odometer_km:
+      required: true
+      example: 102607
+      selector:
+        number:
+          min: 0
+          max: 9999999
+          step: 0.1
+          mode: box
+          unit_of_measurement: km
+    occurred_on:
+      selector:
+        date:
+    vendor:
+      selector:
+        text:
+    country_code:
+      example: DE
+      selector:
+        text:
+    liters:
+      selector:
+        number:
+          min: 0
+          max: 10000
+          step: 0.01
+          mode: box
+    price_per_liter:
+      selector:
+        number:
+          min: 0
+          max: 10000
+          step: 0.001
+          mode: box
+    is_full_tank:
+      selector:
+        boolean:
+    amount:
+      selector:
+        number:
+          min: 0
+          max: 1000000
+          step: 0.01
+          mode: box
+    currency:
+      example: EUR
+      selector:
+        text:
+    performed_by:
+      selector:
+        text:
+    notes:
+      selector:
+        text:
+          multiline: true
