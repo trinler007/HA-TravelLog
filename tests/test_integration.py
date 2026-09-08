@@ -7,6 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import pytest
 
 pytest.importorskip("homeassistant")
@@ -52,7 +53,17 @@ async def hass(tmp_path):
     loader.async_setup(hass)
     hass.config_entries = config_entries.ConfigEntries(hass, {})
     await async_load_base_functionality(hass)
-    yield hass
+    # HTTP behavior is covered separately against a real server. Use a plain
+    # session here so flow tests do not require HA's unrelated mDNS discovery.
+    async with aiohttp.ClientSession() as session:
+        with (
+            patch("custom_components.travellog.async_get_clientsession", return_value=session),
+            patch(
+                "custom_components.travellog.config_flow.async_get_clientsession",
+                return_value=session,
+            ),
+        ):
+            yield hass
     await hass.async_stop(force=True)
 
 
@@ -220,3 +231,29 @@ async def test_config_flow_errors(hass, error, reason):
             data={"url": "https://travel.example", "api_key": "test"},
         )
     assert result["errors"] == {"base": reason}
+
+
+async def test_reauthentication_updates_key(hass):
+    with patch(
+        "custom_components.travellog.api.TravelLogClient.fetch",
+        AsyncMock(return_value=deepcopy(SNAPSHOT)),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            "travellog",
+            context={"source": "user"},
+            data={"url": "https://travel.example", "api_key": "old"},
+        )
+        await hass.async_block_till_done()
+        entry = result["result"]
+        reauth = await hass.config_entries.flow.async_init(
+            "travellog",
+            context={"source": "reauth", "entry_id": entry.entry_id},
+            data=entry.data,
+        )
+        assert reauth["step_id"] == "reauth_confirm"
+        reauth = await hass.config_entries.flow.async_configure(
+            reauth["flow_id"], {"api_key": "new"}
+        )
+        assert reauth["reason"] == "reauth_successful"
+        assert entry.data["api_key"] == "new"
+        await hass.async_block_till_done()
