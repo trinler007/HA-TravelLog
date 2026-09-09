@@ -1,5 +1,9 @@
 # Fahrerhaus-Display
 
+Für das vorhandene **480 × 480**-Display mit fünf bereits belegten Seiten gibt
+es die [Erweiterung mit Tankformular und Zahlentastatur](480x480/README.md).
+Die folgende Anleitung bezieht sich auf das ursprüngliche 320 × 480-Beispiel.
+
 ## Einrichtung
 
 1. TravelLog-Integration einrichten. MQTT und die zur Display-Firmware passende openHASP-Integration müssen bereits funktionieren.

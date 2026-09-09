@@ -1,0 +1,118 @@
+# Append these entries to your existing plate objects list.
+- obj: p6b2
+  properties:
+    text: '{{ states(''sensor.nx_01_position_gps_location'') }}'
+- obj: p6b3
+  properties:
+    text: '{{ ''Kilometerstand\n'' ~ (states(''input_text.travellog_480_km'')[1:] ~ '' km'' if states(''input_text.travellog_480_km'')
+      != ''|'' else ''Antippen'') }}'
+  event:
+    up:
+    - service: script.travellog_480_action
+      data:
+        operation: edit_km_day
+- obj: p6b4
+  event:
+    up:
+    - service: script.travellog_480_action
+      data:
+        operation: day_end
+- obj: p7b2
+  properties:
+    text: '{{ ''Kilometerstand: '' ~ (states(''input_text.travellog_480_km'')[1:] ~ '' km'' if states(''input_text.travellog_480_km'')
+      != ''|'' else ''Antippen'') }}'
+  event:
+    up:
+    - service: script.travellog_480_action
+      data:
+        operation: edit_km_fuel
+- obj: p7b3
+  properties:
+    text: '{{ ''Liter\n'' ~ (states(''input_text.travellog_480_liters'')[1:] if states(''input_text.travellog_480_liters'')
+      != ''|'' else ''optional'') }}'
+  event:
+    up:
+    - service: script.travellog_480_action
+      data:
+        operation: edit_liters
+- obj: p7b4
+  properties:
+    text: '{{ ''EUR / Liter\n'' ~ (states(''input_text.travellog_480_price'')[1:] if states(''input_text.travellog_480_price'')
+      != ''|'' else ''optional'') }}'
+  event:
+    up:
+    - service: script.travellog_480_action
+      data:
+        operation: edit_price
+- obj: p7b5
+  properties:
+    text: '{{ ''Gesamt EUR\n'' ~ (states(''input_text.travellog_480_amount'')[1:] if states(''input_text.travellog_480_amount'')
+      != ''|'' else ''optional'') }}'
+  event:
+    up:
+    - service: script.travellog_480_action
+      data:
+        operation: edit_amount
+- obj: p7b6
+  properties:
+    val: '{{ 1 if is_state(''input_boolean.travellog_480_full'',''on'') else 0 }}'
+  event:
+    'on':
+    - service: script.travellog_480_action
+      data:
+        operation: full
+        checked: 1
+    'off':
+    - service: script.travellog_480_action
+      data:
+        operation: full
+        checked: 0
+- obj: p7b7
+  event:
+    up:
+    - service: script.travellog_480_action
+      data:
+        operation: fuel
+- obj: p8b1
+  properties:
+    text: '{{ {''km'':''Kilometerstand'',''liters'':''Fuellmenge in Litern'',''price'':''Preis pro Liter
+      (EUR)'',''amount'':''Gesamtpreis (EUR)''}.get(states(''input_select.travellog_480_field''), ''Zahl
+      eingeben'') }}'
+- obj: p8b2
+  properties:
+    text: '{{ states(''input_text.travellog_480_editor'')[1:] }}'
+- obj: p8b3
+  event:
+    up:
+    - service: script.travellog_480_action
+      data:
+        operation: key
+        key: '{{ text }}'
+- obj: p8b4
+  event:
+    up:
+    - service: script.travellog_480_action
+      data:
+        operation: key
+        key: C
+- obj: p8b5
+  event:
+    up:
+    - service: script.travellog_480_action
+      data:
+        operation: cancel
+- obj: p8b6
+  event:
+    up:
+    - service: script.travellog_480_action
+      data:
+        operation: accept
+- obj: p6b6
+  properties:
+    text: '{{ states(''input_text.travellog_480_feedback'') }}'
+- obj: p7b9
+  properties:
+    text: '{{ states(''input_text.travellog_480_feedback'') }}'
+- obj: p8b7
+  properties:
+    text: '{{ states(''input_text.travellog_480_feedback'') }}'

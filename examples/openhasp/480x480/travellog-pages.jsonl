@@ -1,0 +1,28 @@
+{"page":1,"id":0,"prev":6}
+{"page":5,"id":0,"next":6}
+{"page":6,"id":0,"prev":5,"next":1,"bg_color":"#2C3E50"}
+{"page":7,"id":0,"prev":6,"next":6,"bg_color":"#2C3E50"}
+{"page":8,"id":0,"prev":6,"next":6,"bg_color":"#2C3E50"}
+{"page":6,"id":1,"obj":"label","x":16,"y":58,"w":448,"h":36,"text":"TravelLog","text_font":30,"text_color":"#FFFFFF"}
+{"page":6,"id":2,"obj":"label","x":16,"y":100,"w":448,"h":44,"text":"Tagesziel wird geladen","text_font":20,"text_color":"#FFFFFF"}
+{"page":6,"id":3,"obj":"btn","x":16,"y":154,"w":448,"h":68,"text":"Kilometerstand\nAntippen","text_font":25,"text_color":"#FFFFFF","bg_color":"#3C5268","radius":10,"border_side":0,"toggle":false}
+{"page":6,"id":4,"obj":"btn","x":16,"y":238,"w":216,"h":70,"text":"Tagesabschluss\nspeichern","text_font":20,"text_color":"#FFFFFF","bg_color":"#247A69","radius":10,"border_side":0,"toggle":false}
+{"page":6,"id":5,"obj":"btn","x":248,"y":238,"w":216,"h":70,"text":"Tanken\nFormular oeffnen","text_font":20,"text_color":"#FFFFFF","bg_color":"#3C5268","radius":10,"border_side":0,"toggle":false,"action":{"up":"page 7"}}
+{"page":6,"id":6,"obj":"label","x":16,"y":325,"w":448,"h":48,"text":"Bereit","text_font":20,"text_color":"#FFFFFF"}
+{"page":6,"id":7,"obj":"label","x":16,"y":383,"w":448,"h":26,"text":"KM eingeben, dann Aktion waehlen","text_font":20,"text_color":"#B7C9D8"}
+{"page":7,"id":1,"obj":"label","x":16,"y":58,"w":448,"h":34,"text":"Tankvorgang","text_font":30,"text_color":"#FFFFFF"}
+{"page":7,"id":2,"obj":"btn","x":16,"y":100,"w":448,"h":46,"text":"Kilometerstand: antippen","text_font":20,"text_color":"#FFFFFF","bg_color":"#3C5268","radius":10,"border_side":0,"toggle":false}
+{"page":7,"id":3,"obj":"btn","x":16,"y":158,"w":216,"h":64,"text":"Liter\noptional","text_font":20,"text_color":"#FFFFFF","bg_color":"#3C5268","radius":10,"border_side":0,"toggle":false}
+{"page":7,"id":4,"obj":"btn","x":248,"y":158,"w":216,"h":64,"text":"EUR / Liter\noptional","text_font":20,"text_color":"#FFFFFF","bg_color":"#3C5268","radius":10,"border_side":0,"toggle":false}
+{"page":7,"id":5,"obj":"btn","x":16,"y":234,"w":216,"h":64,"text":"Gesamt EUR\noptional","text_font":20,"text_color":"#FFFFFF","bg_color":"#3C5268","radius":10,"border_side":0,"toggle":false}
+{"page":7,"id":6,"obj":"checkbox","x":252,"y":251,"w":208,"h":40,"text":" Vollgetankt","text_font":20,"text_color":"#FFFFFF","val":0}
+{"page":7,"id":7,"obj":"btn","x":16,"y":312,"w":288,"h":52,"text":"Tankvorgang speichern","text_font":20,"text_color":"#FFFFFF","bg_color":"#247A69","radius":10,"border_side":0,"toggle":false}
+{"page":7,"id":8,"obj":"btn","x":316,"y":312,"w":148,"h":52,"text":"Zurueck","text_font":20,"text_color":"#FFFFFF","bg_color":"#3C5268","radius":10,"border_side":0,"toggle":false,"action":{"up":"page 6"}}
+{"page":7,"id":9,"obj":"label","x":16,"y":375,"w":448,"h":38,"text":"Bereit","text_font":20,"text_color":"#FFFFFF"}
+{"page":8,"id":1,"obj":"label","x":16,"y":58,"w":448,"h":30,"text":"Zahl eingeben","text_font":25,"text_color":"#FFFFFF"}
+{"page":8,"id":2,"obj":"label","x":16,"y":94,"w":448,"h":44,"text":"","text_font":30,"text_color":"#FFFFFF","align":2}
+{"page":8,"id":3,"obj":"btnmatrix","x":16,"y":150,"w":448,"h":184,"text_font":25,"text_color":"#FFFFFF","options":["1","2","3","\n","4","5","6","\n","7","8","9","\n",".","0","<"],"toggle":false}
+{"page":8,"id":4,"obj":"btn","x":16,"y":345,"w":96,"h":42,"text":"Leeren","text_font":20,"text_color":"#FFFFFF","bg_color":"#3C5268","radius":10,"border_side":0,"toggle":false}
+{"page":8,"id":5,"obj":"btn","x":124,"y":345,"w":160,"h":42,"text":"Abbrechen","text_font":20,"text_color":"#FFFFFF","bg_color":"#3C5268","radius":10,"border_side":0,"toggle":false}
+{"page":8,"id":6,"obj":"btn","x":296,"y":345,"w":168,"h":42,"text":"OK","text_font":20,"text_color":"#FFFFFF","bg_color":"#247A69","radius":10,"border_side":0,"toggle":false}
+{"page":8,"id":7,"obj":"label","x":16,"y":391,"w":448,"h":24,"text":"","text_font":16,"text_color":"#FFFFFF"}

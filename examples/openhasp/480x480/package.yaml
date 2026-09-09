@@ -1,0 +1,263 @@
+# Copy to /config/packages/travellog_480.yaml. Merge objects.yaml separately
+# into your EXISTING openhasp plate objects list.
+input_text:
+  travellog_480_km:
+    name: TravelLog Display Kilometer
+    initial: "|"
+    max: 14
+  travellog_480_liters:
+    name: TravelLog Display Liter
+    initial: "|"
+    max: 14
+  travellog_480_price:
+    name: TravelLog Display Literpreis
+    initial: "|"
+    max: 14
+  travellog_480_amount:
+    name: TravelLog Display Gesamtpreis
+    initial: "|"
+    max: 14
+  travellog_480_editor:
+    name: TravelLog Display Zahleneingabe
+    initial: "|"
+    max: 14
+  travellog_480_feedback:
+    name: TravelLog Display Rueckmeldung
+    initial: Bereit
+    max: 100
+input_select:
+  travellog_480_field:
+    name: TravelLog Display Eingabefeld
+    options: [km, liters, price, amount]
+    initial: km
+  travellog_480_return_page:
+    name: TravelLog Display Formularseite
+    options: ["6", "7"]
+    initial: "6"
+input_boolean:
+  travellog_480_submitted:
+    name: TravelLog Display bereits gesendet
+    initial: false
+  travellog_480_full:
+    name: TravelLog Display vollgetankt
+    initial: false
+
+script:
+  travellog_480_action:
+    alias: TravelLog Display Bedienung 480
+    description: Eingaben werden lokal vorbereitet; nur die Speichertasten schreiben ins Bordbuch.
+    mode: queued
+    max: 30
+    fields:
+      operation:
+        description: Displayaktion
+      key:
+        description: Ziffer oder Steuertaste
+      checked:
+        description: Checkboxzustand
+    sequence:
+      - variables:
+          # CHANGE HERE if your plate has a different HA entity ID.
+          plate: openhasp.terminal01
+          location_entity: sensor.nx_01_position_gps_location
+          # Leave empty for a single TravelLog instance.
+          travel_entry: ""
+          selected: "{{ states('input_select.travellog_480_field') }}"
+      - choose:
+          - conditions: "{{ operation in ['edit_km_day', 'edit_km_fuel', 'edit_liters', 'edit_price', 'edit_amount'] }}"
+            sequence:
+              - variables:
+                  field: "{{ 'km' if operation in ['edit_km_day','edit_km_fuel'] else operation[5:] }}"
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.travellog_480_field
+                data:
+                  option: "{{ field }}"
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.travellog_480_return_page
+                data:
+                  option: "{{ '6' if operation == 'edit_km_day' else '7' }}"
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.travellog_480_editor
+                data:
+                  value: "{{ states('input_text.travellog_480_' ~ field) }}"
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.travellog_480_feedback
+                data:
+                  value: Zahl eingeben, dann OK
+              - action: openhasp.change_page
+                target:
+                  entity_id: "{{ plate }}"
+                data:
+                  page: 8
+          - conditions: "{{ operation == 'key' }}"
+            sequence:
+              - variables:
+                  current: "{{ states('input_text.travellog_480_editor') }}"
+                  pressed: "{{ key | string }}"
+              - condition: template
+                value_template: "{{ pressed in ['0','1','2','3','4','5','6','7','8','9','.','<','C'] }}"
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.travellog_480_editor
+                data:
+                  # The | prefix prevents HA from converting unfinished decimals
+                  # (e.g. 12. or 1.00) into native floats during editing.
+                  value: >-
+                    {% if pressed == 'C' %}|
+                    {% elif pressed == '<' %}{{ current[:-1] if current | length > 1 else '|' }}
+                    {% elif pressed == '.' and '.' not in current %}{{ (current if current != '|' else '|0') ~ '.' }}
+                    {% elif pressed != '.' and current | length < 13 %}{{ current ~ pressed }}
+                    {% else %}{{ current }}{% endif %}
+          - conditions: "{{ operation == 'accept' }}"
+            sequence:
+              - variables:
+                  raw: "{{ states('input_text.travellog_480_editor') }}"
+                  places: "{{ {'km':1,'liters':2,'price':3,'amount':2}[selected] }}"
+                  maximum: "{{ {'km':9999999,'liters':10000,'price':10000,'amount':1000000}[selected] }}"
+              - if:
+                  - condition: template
+                    value_template: >-
+                      {% set value = raw[1:].rstrip('.') %}
+                      {{ not ((value == '' and selected != 'km') or
+                         ((value | regex_match('^[0-9]+([.][0-9]{1,' ~ places ~ '})?$')) and
+                          (value | float(-1)) >= 0 and (value | float) <= maximum)) }}
+                then:
+                  - action: input_text.set_value
+                    target:
+                      entity_id: input_text.travellog_480_feedback
+                    data:
+                      value: "{{ 'Ungueltig: max. ' ~ maximum ~ ', ' ~ places ~ ' Nachkommastellen' }}"
+                  - stop: Ungueltige Eingabe
+              - action: input_text.set_value
+                target:
+                  entity_id: "{{ 'input_text.travellog_480_' ~ selected }}"
+                data:
+                  value: "{{ '|' ~ raw[1:].rstrip('.') }}"
+              - if: "{{ selected == 'km' }}"
+                then:
+                  - action: input_boolean.turn_off
+                    target:
+                      entity_id: input_boolean.travellog_480_submitted
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.travellog_480_feedback
+                data:
+                  value: Eingabe uebernommen, noch nicht gespeichert
+              - action: openhasp.change_page
+                target:
+                  entity_id: "{{ plate }}"
+                data:
+                  page: "{{ states('input_select.travellog_480_return_page') | int }}"
+          - conditions: "{{ operation == 'cancel' }}"
+            sequence:
+              - action: openhasp.change_page
+                target:
+                  entity_id: "{{ plate }}"
+                data:
+                  page: "{{ states('input_select.travellog_480_return_page') | int }}"
+          - conditions: "{{ operation == 'full' }}"
+            sequence:
+              - action: "{{ 'input_boolean.turn_on' if checked | int(0) == 1 else 'input_boolean.turn_off' }}"
+                target:
+                  entity_id: input_boolean.travellog_480_full
+          - conditions: "{{ operation in ['day_end','fuel'] }}"
+            sequence:
+              # A queued double tap must not retry a slow or uncertain POST.
+              # Confirming the KM field explicitly arms a new submission.
+              - condition: state
+                entity_id: input_boolean.travellog_480_submitted
+                state: "off"
+              - variables:
+                  km: "{{ states('input_text.travellog_480_km') }}"
+                  liters: "{{ states('input_text.travellog_480_liters') }}"
+                  price: "{{ states('input_text.travellog_480_price') }}"
+                  amount: "{{ states('input_text.travellog_480_amount') }}"
+                  destination: "{{ states(location_entity) }}"
+                  saved_entry: {}
+              - if:
+                  - condition: template
+                    value_template: "{{ not (km[1:] | regex_match('^[0-9]+([.][0-9])?$')) or km[1:] | float(-1) < 0 or km[1:] | float(0) > 9999999 }}"
+                then:
+                  - action: input_text.set_value
+                    target:
+                      entity_id: input_text.travellog_480_feedback
+                    data:
+                      value: Bitte aktuellen KM-Stand eingeben
+                  - stop: Kilometerstand fehlt
+              - if:
+                  - condition: template
+                    value_template: "{{ operation == 'day_end' and (destination | trim | lower in ['','unknown','unavailable'] or destination | length > 180) }}"
+                then:
+                  - action: input_text.set_value
+                    target:
+                      entity_id: input_text.travellog_480_feedback
+                    data:
+                      value: Tagesziel fehlt oder ist ungueltig
+                  - stop: Tagesziel fehlt
+              - variables:
+                  payload: >-
+                    {% set ns = namespace(data={'log_type':operation, 'odometer_km':km[1:] | float}) %}
+                    {% if travel_entry %}{% set ns.data = dict(ns.data, config_entry_id=travel_entry) %}{% endif %}
+                    {% if operation == 'day_end' %}
+                      {% set ns.data = dict(ns.data, vendor=destination | trim) %}
+                    {% else %}
+                      {% set ns.data = dict(ns.data, is_full_tank=is_state('input_boolean.travellog_480_full','on')) %}
+                      {% if liters != '|' %}{% set ns.data = dict(ns.data, liters=liters[1:] | float) %}{% endif %}
+                      {% if price != '|' %}{% set ns.data = dict(ns.data, price_per_liter=price[1:] | float) %}{% endif %}
+                      {% if amount != '|' %}{% set ns.data = dict(ns.data, amount=amount[1:] | float) %}{% endif %}
+                    {% endif %}
+                    {{ ns.data }}
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.travellog_480_feedback
+                data:
+                  value: Speichert ...
+              - action: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.travellog_480_submitted
+              - action: travellog.add_logbook_entry
+                data: "{{ payload }}"
+                response_variable: saved_entry
+                continue_on_error: true
+              - if:
+                  - condition: template
+                    value_template: "{{ saved_entry is mapping and saved_entry.get('id') is number }}"
+                then:
+                  - action: input_text.set_value
+                    target:
+                      entity_id: input_text.travellog_480_feedback
+                    data:
+                      value: "{{ 'Gespeichert #' ~ saved_entry.id ~ (' - WebApp ergaenzen' if saved_entry.needs_review else '') }}"
+                  - action: input_text.set_value
+                    target:
+                      entity_id: input_text.travellog_480_km
+                    data:
+                      value: "|"
+                  - if: "{{ operation == 'fuel' }}"
+                    then:
+                      - action: input_text.set_value
+                        target:
+                          entity_id:
+                            - input_text.travellog_480_liters
+                            - input_text.travellog_480_price
+                            - input_text.travellog_480_amount
+                        data:
+                          value: "|"
+                      - action: input_boolean.turn_off
+                        target:
+                          entity_id: input_boolean.travellog_480_full
+                  - action: openhasp.change_page
+                    target:
+                      entity_id: "{{ plate }}"
+                    data:
+                      page: 6
+                else:
+                  - action: input_text.set_value
+                    target:
+                      entity_id: input_text.travellog_480_feedback
+                    data:
+                      value: Fehler/unklar - zuerst WebApp pruefen

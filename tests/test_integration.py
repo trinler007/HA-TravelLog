@@ -9,13 +9,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
+import yaml
 
 pytest.importorskip("homeassistant")
 
 import voluptuous as vol
 from homeassistant import config_entries, loader
 from homeassistant.bootstrap import async_load_base_functionality
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, SupportsResponse
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -388,3 +389,113 @@ async def test_buttons_and_options_through_home_assistant(hass):
         assert entry.runtime_data.fuel_inputs["liters"] is None
         assert entry.runtime_data.full_tank is False
         assert request.await_count == 2
+
+
+async def setup_display_package(hass, fail=False):
+    """Run the actual supplied YAML with HA helpers and mocked external services."""
+    package = yaml.safe_load(
+        (Path(__file__).parents[1] / "examples/openhasp/480x480/package.yaml").read_text()
+    )
+    posts, pages = [], []
+
+    async def change_page(call):
+        pages.append(call.data["page"])
+
+    async def write(call):
+        posts.append(dict(call.data))
+        if fail:
+            raise HomeAssistantError("Uncertain write")
+        return {"id": 123, "needs_review": call.data["log_type"] == "fuel"}
+
+    hass.services.async_register("openhasp", "change_page", change_page)
+    hass.services.async_register(
+        "travellog", "add_logbook_entry", write, supports_response=SupportsResponse.OPTIONAL
+    )
+    for domain in ("input_text", "input_select", "input_boolean", "script"):
+        assert await async_setup_component(hass, domain, {domain: package[domain]})
+    await hass.async_block_till_done()
+
+    async def operate(operation, **kwargs):
+        await hass.services.async_call(
+            "script", "travellog_480_action", {"operation": operation, **kwargs}, blocking=True
+        )
+
+    async def enter(field, value):
+        await operate("edit_" + field)
+        await operate("key", key="C")
+        for digit in value:
+            await operate("key", key=digit)
+        await operate("accept")
+
+    return posts, pages, operate, enter
+
+
+async def test_display_decimal_fuel_and_double_tap(hass):
+    posts, pages, operate, enter = await setup_display_package(hass)
+    await enter("km_fuel", "102607")
+    await enter("liters", "123.40")
+    assert hass.states.get("input_text.travellog_480_liters").state == "|123.40"
+    await enter("price", "1.789")
+    await operate("full", checked=1)
+    await operate("fuel")
+    assert posts == [
+        {
+            "log_type": "fuel",
+            "odometer_km": 102607,
+            "liters": 123.4,
+            "price_per_liter": 1.789,
+            "is_full_tank": True,
+        }
+    ]
+    assert hass.states.get("input_text.travellog_480_km").state == "|"
+    assert hass.states.get("input_text.travellog_480_liters").state == "|"
+    assert hass.states.get("input_boolean.travellog_480_full").state == "off"
+    assert "WebApp ergaenzen" in hass.states.get("input_text.travellog_480_feedback").state
+    assert pages[-1] == 6
+    await operate("fuel")
+    assert len(posts) == 1
+
+
+async def test_display_day_end_location_and_cancel(hass):
+    posts, pages, operate, enter = await setup_display_package(hass)
+    await enter("km_day", "100.5")
+    await operate("edit_km_day")
+    await operate("key", key="C")
+    await operate("key", key="9")
+    await operate("cancel")
+    assert hass.states.get("input_text.travellog_480_km").state == "|100.5"
+    assert pages[-1] == 6
+    await operate("day_end")
+    assert posts == []
+    hass.states.async_set("sensor.nx_01_position_gps_location", "Bozen")
+    await operate("day_end")
+    assert posts == [{"log_type": "day_end", "odometer_km": 100.5, "vendor": "Bozen"}]
+
+
+async def test_display_rejects_invalid_precision_and_preserves_zero(hass):
+    posts, _, operate, enter = await setup_display_package(hass)
+    await enter("km_fuel", "100")
+    await enter("price", "1.2345")
+    assert hass.states.get("input_text.travellog_480_price").state == "|"
+    assert "Ungueltig" in hass.states.get("input_text.travellog_480_feedback").state
+    await enter("amount", "0")
+    await operate("fuel")
+    assert posts == [{"log_type": "fuel", "odometer_km": 100, "amount": 0, "is_full_tank": False}]
+
+
+async def test_display_uncertain_write_cannot_be_retried_by_queued_tap(hass):
+    posts, _, operate, enter = await setup_display_package(hass, fail=True)
+    await enter("km_fuel", "100")
+    await enter("liters", "25.50")
+    await operate("fuel")
+    assert len(posts) == 1
+    assert hass.states.get("input_text.travellog_480_km").state == "|100"
+    assert hass.states.get("input_text.travellog_480_liters").state == "|25.50"
+    assert "WebApp pruefen" in hass.states.get("input_text.travellog_480_feedback").state
+    await operate("fuel")
+    assert len(posts) == 1
+    # Explicit KM confirmation is needed to arm a new attempt after checking the web app.
+    await operate("edit_km_fuel")
+    await operate("accept")
+    await operate("fuel")
+    assert len(posts) == 2
